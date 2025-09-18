@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mega Project - Company Dashboard">
+    <meta name="keywords" content="dashboard, company, departments, management">
+    <meta name="author" content="Mega Project Team">
+    
+    <title>Mega Project - Dashboard</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom Bootstrap CSS -->
+    <link href="bootstrap-custom.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header Navigation -->
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light fixed-top shadow-lg" role="navigation" aria-label="Main navigation">
+            <div class="container-fluid">
+                <!-- Company Logo -->
+                <a class="navbar-brand d-flex align-items-center" href="#" aria-label="Mega Project Home">
+                    <img src="assets/logo.png" alt="Mega Project Logo" height="40" class="me-2 logo-img">
+                    <!--<span class="brand-text fw-bold">Mega Project</span>-->
+                </a>
+                
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <!-- Navigation Links -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="#home">
+                                <i class="fas fa-home me-1"></i>Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#about">
+                                <i class="fas fa-info-circle me-1"></i>About
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#contact">
+                                <i class="fas fa-envelope me-1"></i>Contact
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Search Bar -->
+                    <form class="d-flex me-3" role="search" aria-label="Search departments">
+                        <div class="input-group">
+                            <input class="form-control search-input" type="search" placeholder="Search departments..." 
+                                   aria-label="Search departments" id="searchInput">
+                            <button class="btn btn-outline-primary" type="submit" aria-label="Search">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Additional Nav Items -->
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#notifications" aria-label="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span class="badge bg-danger badge-notification">3</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" id="home">
+        <div class="container-fluid">
+            <!-- Welcome Section -->
+            <section class="welcome-section text-center mb-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <h1 class="display-4 fw-bold text-primary mb-3">Welcome to EDARA Main Dashboard</h1>
+                        <p class="lead text-muted">Select a department to access your workspace and tools</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="text-center mb-4" style="display: none;">
+                <div class="spinner-border text-primary" role="status" aria-label="Loading departments">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading departments...</p>
+            </div>
+
+            <!-- Departments Grid -->
+            <section class="departments-section" aria-label="Company departments">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div id="departmentsGrid" class="row g-4">
+                            <!-- Department cards will be dynamically generated here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="alert alert-danger d-none" role="alert" aria-live="polite">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span id="errorText">Unable to load departments. Please try again later.</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-light mt-5">
+        <div class="container">
+            <!-- Copyright -->
+            <div class="row py-3">
+                <div class="col-12 text-center">
+                    <p class="mb-0 text-muted">
+                        &copy; <span id="currentYear">2024</span> Mega Project. All rights reserved. | 
+                        Developed by Digital Transformation Team
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="js/script.js"></script>
+</body>
+</html>

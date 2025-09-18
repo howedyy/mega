@@ -1,0 +1,395 @@
+/**
+ * MEGA PROJECT - CUSTOM BOOTSTRAP OVERRIDES
+ * Custom Bootstrap 5 theme with modern styling
+ */
+
+/* ===================================================================
+   CUSTOM BOOTSTRAP VARIABLES & OVERRIDES
+   ================================================================== */
+
+/* Primary Color Overrides */
+:root {
+    --bs-primary: #667eea;
+    --bs-primary-rgb: 102, 126, 234;
+    --bs-secondary: #6c757d;
+    --bs-secondary-rgb: 108, 117, 125;
+    --bs-success: #28a745;
+    --bs-success-rgb: 40, 167, 69;
+    --bs-info: #17a2b8;
+    --bs-info-rgb: 23, 162, 184;
+    --bs-warning: #ffc107;
+    --bs-warning-rgb: 255, 193, 7;
+    --bs-danger: #dc3545;
+    --bs-danger-rgb: 220, 53, 69;
+    --bs-light: #f8f9fa;
+    --bs-light-rgb: 248, 249, 250;
+    --bs-dark: #343a40;
+    --bs-dark-rgb: 52, 58, 64;
+}
+
+/* ===================================================================
+   BUTTON CUSTOMIZATIONS
+   ================================================================== */
+.btn {
+    border-radius: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    color: white;
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--bs-primary);
+    color: var(--bs-primary);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--bs-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ===================================================================
+   FORM CUSTOMIZATIONS
+   ================================================================== */
+.form-control {
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: translateY(-1px);
+}
+
+.form-select {
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* ===================================================================
+   CARD CUSTOMIZATIONS
+   ================================================================== */
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* ===================================================================
+   NAVBAR CUSTOMIZATIONS
+   ================================================================== */
+.navbar-dark .navbar-brand {
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    margin: 0 0.25rem;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.navbar-dark .navbar-nav .nav-link.active {
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+/* ===================================================================
+   ALERT CUSTOMIZATIONS
+   ================================================================== */
+.alert {
+    border: none;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+}
+
+/* ===================================================================
+   BADGE CUSTOMIZATIONS
+   ================================================================== */
+.badge {
+    border-radius: 50rem;
+    font-weight: 600;
+    font-size: 0.75em;
+    padding: 0.35em 0.65em;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
+}
+
+/* ===================================================================
+   PAGINATION CUSTOMIZATIONS
+   ================================================================== */
+.pagination .page-link {
+    border: 2px solid #dee2e6;
+    color: var(--bs-primary);
+    border-radius: 0.5rem;
+    margin: 0 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: var(--bs-primary);
+}
+
+/* ===================================================================
+   DROPDOWN CUSTOMIZATIONS
+   ================================================================== */
+.dropdown-menu {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--bs-primary);
+    color: white;
+    transform: translateX(5px);
+}
+
+/* ===================================================================
+   MODAL CUSTOMIZATIONS
+   ================================================================== */
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 2rem 4rem rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-bottom: 2px solid #dee2e6;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 1rem 1rem 0 0;
+}
+
+.modal-footer {
+    border-top: 2px solid #dee2e6;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0 0 1rem 1rem;
+}
+
+/* ===================================================================
+   PROGRESS BAR CUSTOMIZATIONS
+   ================================================================== */
+.progress {
+    border-radius: 50rem;
+    height: 1rem;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50rem;
+    transition: width 0.6s ease;
+}
+
+/* ===================================================================
+   TABLE CUSTOMIZATIONS
+   ================================================================== */
+.table {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(102, 126, 234, 0.05);
+    transform: scale(1.01);
+}
+
+/* ===================================================================
+   RESPONSIVE UTILITIES
+   ================================================================== */
+@media (max-width: 768px) {
+    .btn {
+        font-size: 0.9rem;
+        padding: 0.6rem 1.2rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .form-control, .form-select {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+/* ===================================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .card,
+    .form-control,
+    .nav-link,
+    .dropdown-item,
+    .table tbody tr {
+        transition: none !important;
+    }
+}
+
+/* Focus visible improvements */
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* ===================================================================
+   DARK MODE SUPPORT (Optional)
+   ================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bs-body-bg: #1a1a1a;
+        --bs-body-color: #e9ecef;
+        --bs-dark: #f8f9fa;
+        --bs-light: #343a40;
+    }
+    
+    .card {
+        background-color: #2d2d2d;
+        color: #e9ecef;
+    }
+    
+    .form-control,
+    .form-select {
+        background-color: #343a40;
+        border-color: #495057;
+        color: #e9ecef;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        background-color: #495057;
+        color: #e9ecef;
+    }
+}
