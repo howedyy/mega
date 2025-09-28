@@ -4,7 +4,7 @@ A comprehensive, responsive web application built with HTML5, CSS3, JavaScript E
 
 ## 🌟 Features
 
-### Dashboard (index.html)
+### Authentication Flow
 - **Responsive Design**: Mobile-first approach with Bootstrap 5 grid system
 - **Dynamic Department Cards**: Interactive cards with hover effects and animations
 - **Real-time Search**: Debounced search functionality for departments
@@ -31,7 +31,8 @@ A comprehensive, responsive web application built with HTML5, CSS3, JavaScript E
 
 ```
 mega/
-├── index.html              # Main dashboard page
+├── index.html              # Entry point (redirects to login)
+├── dashboard.html          # Main dashboard page (authenticated users only)
 ├── login.html              # Authentication page
 ├── bootstrap-custom.css    # Custom Bootstrap theme
 ├── README.md              # Project documentation
@@ -75,7 +76,8 @@ mega/
      ```
 
 4. **Open in browser**:
-   - Navigate to `index.html` to view the dashboard
+   - Navigate to `index.html` (which redirects to login) or directly to `login.html`
+   - After successful authentication, you'll be redirected to the personalized dashboard
    - Click any department card to access the login page
 
 ## 🎨 Customization

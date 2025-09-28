@@ -274,15 +274,47 @@ class ApiService {
                 throw new Error('Password must be at least 6 characters');
             }
 
-            // Simulate successful login
+            // Simulate successful login with role-based permissions
+            const rolePermissions = {
+                'admin': {
+                    role: 'Administrator',
+                    permissions: ['read', 'write', 'delete', 'manage_users', 'view_all_departments'],
+                    accessibleDepartments: ['hr', 'finance', 'it', 'security', 'hse', 'customer-service', 'environment']
+                },
+                'manager': {
+                    role: 'Manager',
+                    permissions: ['read', 'write', 'manage_department'],
+                    accessibleDepartments: [department] // Only their department
+                },
+                'supervisor': {
+                    role: 'Supervisor',
+                    permissions: ['read', 'write', 'view_reports'],
+                    accessibleDepartments: [department, 'hr'] // Their department + HR access
+                },
+                'user': {
+                    role: 'User',
+                    permissions: ['read'],
+                    accessibleDepartments: [department] // Only their department, read-only
+                }
+            };
+
+            // Determine user role based on username (for demo purposes)
+            let userRole = 'user'; // default
+            if (username.toLowerCase().includes('admin')) userRole = 'admin';
+            else if (username.toLowerCase().includes('manager')) userRole = 'manager';
+            else if (username.toLowerCase().includes('supervisor')) userRole = 'supervisor';
+
+            const userPermissions = rolePermissions[userRole];
+            
             const userData = {
                 id: Date.now(),
                 username,
                 department,
-                name: `${username.charAt(0).toUpperCase()}${username.slice(1)} User`,
+                name: `${username.charAt(0).toUpperCase()}${username.slice(1)} ${userPermissions.role}`,
                 email: `${username}@megaproject.com`,
-                role: 'user',
-                permissions: ['read', 'write'],
+                role: userPermissions.role,
+                permissions: userPermissions.permissions,
+                accessibleDepartments: userPermissions.accessibleDepartments,
                 lastLogin: new Date().toISOString()
             };
 
@@ -364,12 +396,50 @@ class Dashboard {
             this.showLoading(true);
             this.hideError();
 
+            // Get user session for permissions filtering
+            const userSession = sessionStorage.getItem('megaproject_session') || localStorage.getItem('megaproject_session');
+            let userPermissions = null;
+            
+            if (userSession) {
+                try {
+                    const session = JSON.parse(userSession);
+                    userPermissions = session;
+                } catch (error) {
+                    console.error('Error parsing user session:', error);
+                }
+            }
+
             const result = await ApiService.fetchDepartments();
             
             if (result.success) {
-                this.departments = result.data;
+                let departmentsToShow = result.data;
+                
+                // Filter departments based on user permissions
+                if (userPermissions && userPermissions.accessibleDepartments) {
+                    departmentsToShow = result.data.filter(dept => 
+                        userPermissions.accessibleDepartments.includes(dept.id)
+                    );
+                    
+                    // Add visual indicator for permission-based filtering
+                    if (departmentsToShow.length < result.data.length) {
+                        const permissionInfo = document.getElementById('permissionInfo');
+                        const permissionText = document.getElementById('permissionText');
+                        if (permissionInfo && permissionText) {
+                            permissionText.textContent = 
+                                `Showing ${departmentsToShow.length} of ${result.data.length} departments based on your ${userPermissions.role} role permissions.`;
+                            permissionInfo.classList.remove('d-none');
+                        }
+                    }
+                }
+                
+                this.departments = departmentsToShow;
                 this.filteredDepartments = [...this.departments];
                 this.renderDepartments();
+                
+                // Show message if no departments accessible
+                if (departmentsToShow.length === 0) {
+                    this.showError('No departments available with your current permissions. Please contact your administrator.');
+                }
             } else {
                 this.showError(result.error);
             }
@@ -661,8 +731,8 @@ class LoginManager {
                 
                 // Redirect after short delay
                 setTimeout(() => {
-                    // In a real app, redirect to department-specific dashboard
-                    window.location.href = `index.html?success=1&dept=${credentials.department}`;
+                    // Redirect to personalized dashboard based on authentication
+                    window.location.href = `dashboard.html?success=1&dept=${credentials.department}`;
                 }, 1500);
             } else {
                 this.showAlert(result.error, 'danger');
@@ -823,7 +893,7 @@ class App {
 
     detectCurrentPage() {
         const path = window.location.pathname;
-        const filename = path.split('/').pop() || 'index.html';
+        const filename = path.split('/').pop() || 'login.html';
         
         if (filename.includes('login')) return 'login';
         return 'dashboard';
