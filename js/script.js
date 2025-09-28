@@ -633,11 +633,9 @@ class LoginManager {
         }
 
         // Real-time validation
-        [this.usernameInput, this.passwordInput, this.departmentSelect].forEach(input => {
-            if (input) {
-                input.addEventListener('blur', () => this.validateField(input));
-                input.addEventListener('input', () => this.clearFieldError(input));
-            }
+        [this.usernameInput, this.passwordInput, this.departmentSelect].filter(input => input).forEach(input => {
+            input.addEventListener('blur', () => this.validateField(input));
+            input.addEventListener('input', () => this.clearFieldError(input));
         });
 
         // Password toggle
@@ -665,6 +663,8 @@ class LoginManager {
     }
 
     populateDepartmentOptions(departments) {
+        if (!this.departmentSelect) return;
+        
         // Clear existing options except the first one
         while (this.departmentSelect.children.length > 1) {
             this.departmentSelect.removeChild(this.departmentSelect.lastChild);
@@ -694,7 +694,7 @@ class LoginManager {
         
         if (remembered) {
             if (this.usernameInput) this.usernameInput.value = remembered.username || '';
-            if (this.departmentSelect) this.departmentSelect.value = remembered.department || '';
+            if (this.departmentSelect && remembered.department) this.departmentSelect.value = remembered.department;
             if (this.rememberMeCheckbox) this.rememberMeCheckbox.checked = true;
         }
     }
@@ -720,7 +720,7 @@ class LoginManager {
             const credentials = {
                 username: this.usernameInput.value.trim(),
                 password: this.passwordInput.value,
-                department: this.departmentSelect.value,
+                department: this.departmentSelect ? this.departmentSelect.value : 'general',
                 rememberMe: this.rememberMeCheckbox.checked
             };
 
@@ -732,7 +732,8 @@ class LoginManager {
                 // Redirect after short delay
                 setTimeout(() => {
                     // Redirect to personalized dashboard based on authentication
-                    window.location.href = `dashboard.html?success=1&dept=${credentials.department}`;
+                    const deptParam = credentials.department !== 'general' ? `&dept=${credentials.department}` : '';
+                    window.location.href = `dashboard.html?success=1${deptParam}`;
                 }, 1500);
             } else {
                 this.showAlert(result.error, 'danger');
@@ -749,11 +750,17 @@ class LoginManager {
     validateForm() {
         let isValid = true;
         
-        [this.usernameInput, this.passwordInput, this.departmentSelect].forEach(field => {
+        // Validate required fields (username and password are required, department is optional)
+        [this.usernameInput, this.passwordInput].forEach(field => {
             if (field && !this.validateField(field)) {
                 isValid = false;
             }
         });
+        
+        // Validate department selection only if it exists (it's optional now)
+        if (this.departmentSelect && !this.validateField(this.departmentSelect)) {
+            isValid = false;
+        }
 
         return isValid;
     }
