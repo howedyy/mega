@@ -8,16 +8,18 @@
 // GLOBAL CONFIGURATION & CONSTANTS
 // ===================================================================
 const CONFIG = {
-    API_BASE_URL: '/api',
+    API_BASE_URL: 'http://localhost:8080/api',
     ENDPOINTS: {
-        DEPARTMENTS: '/api/departments',
-        LOGIN: '/api/login',
-        USER_INFO: '/api/user'
+        LOGIN: 'http://localhost:8080/api/auth/login',
+        LOGOUT: 'http://localhost:8080/api/auth/logout',
+        USER_INFO: 'http://localhost:8080/api/user',
+        SYSTEMS: 'http://localhost:8080/api/systems',
+        USERS_BY_SYSTEM: 'http://localhost:8080/api/users/system'
     },
     STORAGE_KEYS: {
-        DEPARTMENTS: 'megaproject_departments',
         USER_SESSION: 'megaproject_session',
-        REMEMBER_ME: 'megaproject_remember'
+        REMEMBER_ME: 'megaproject_remember',
+        SYSTEMS: 'megaproject_systems'
     },
     ANIMATIONS: {
         DURATION: 300,
@@ -25,72 +27,7 @@ const CONFIG = {
     }
 };
 
-// Mock departments data for demonstration
-const MOCK_DEPARTMENTS = [
-    {
-        id: 'hr',
-        name: 'Human Resources',
-        description: 'Manage employee relations, recruitment, and workforce development',
-        icon: 'fas fa-users',
-        color: '#667eea',
-        employees: 25,
-        active: true
-    },
-    {
-        id: 'finance',
-        name: 'Finance',
-        description: 'Financial planning, budgeting, and accounting operations',
-        icon: 'fas fa-chart-line',
-        color: '#f093fb',
-        employees: 18,
-        active: true
-    },
-    {
-        id: 'it',
-        name: 'Information Technology',
-        description: 'Technology infrastructure, development, and support services',
-        icon: 'fas fa-laptop-code',
-        color: '#4facfe',
-        employees: 32,
-        active: true
-    },
-    {
-        id: 'security',
-        name: 'Security',
-        description: 'Information security, physical security, and risk management',
-        icon: 'fas fa-shield-alt',
-        color: '#43e97b',
-        employees: 15,
-        active: true
-    },
-    {
-        id: 'hse',
-        name: 'HSE',
-        description: 'Health, Safety, and Environment management and compliance',
-        icon: 'fas fa-hard-hat',
-        color: '#fa709a',
-        employees: 20,
-        active: true
-    },
-    {
-        id: 'customer-service',
-        name: 'Customer Service',
-        description: 'Customer support, satisfaction, and relationship management',
-        icon: 'fas fa-headset',
-        color: '#4facfe',
-        employees: 35,
-        active: true
-    },
-    {
-        id: 'environment',
-        name: 'Environment',
-        description: 'Environmental protection, sustainability, and green initiatives',
-        icon: 'fas fa-leaf',
-        color: '#43e97b',
-        employees: 18,
-        active: true
-    }
-];
+
 
 // ===================================================================
 // UTILITY FUNCTIONS
@@ -202,39 +139,154 @@ class Utils {
 // ===================================================================
 class ApiService {
     /**
-     * Fetch departments data
+     * Get authentication headers
      */
-    static async fetchDepartments() {
+    static getAuthHeaders() {
+        const session = Utils.storage.get(CONFIG.STORAGE_KEYS.USER_SESSION);
+        const headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
+        
+        if (session && session.access_token) {
+            headers['Authorization'] = `${session.token_type || 'Bearer'} ${session.access_token}`;
+        }
+        
+        return headers;
+    }
+
+    /**
+     * Get current user info
+     */
+    static async getUserInfo() {
         try {
-            // Check if we have cached data
-            const cached = Utils.storage.get(CONFIG.STORAGE_KEYS.DEPARTMENTS);
+            const response = await fetch(CONFIG.ENDPOINTS.USER_INFO, {
+                method: 'GET',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get user info');
+            }
+
+            const data = await response.json();
+            return { success: true, data: data.user };
+        } catch (error) {
+            console.error('Get user info error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Failed to get user information.',
+                data: null
+            };
+        }
+    }
+
+    /**
+     * Get all systems (filtered by user access)
+     */
+    static async getSystems() {
+        try {
+            // Check cache first
+            const cached = Utils.storage.get(CONFIG.STORAGE_KEYS.SYSTEMS);
             if (cached && cached.timestamp > Date.now() - 5 * 60 * 1000) { // 5 minutes cache
                 return { success: true, data: cached.data };
             }
 
-            // Simulate API call delay
-            await Utils.simulateApiDelay();
+            const response = await fetch(CONFIG.ENDPOINTS.SYSTEMS, {
+                method: 'GET',
+                headers: this.getAuthHeaders()
+            });
 
-            // For demo purposes, we'll use mock data
-            // In real implementation, replace with actual fetch call:
-            // const response = await fetch(CONFIG.ENDPOINTS.DEPARTMENTS);
-            // const data = await response.json();
+            if (!response.ok) {
+                throw new Error('Failed to get systems');
+            }
 
-            const data = MOCK_DEPARTMENTS;
+            const data = await response.json();
+            
+            // Get user session to filter accessible systems
+            const userSession = Utils.storage.get(CONFIG.STORAGE_KEYS.USER_SESSION);
+            let filteredSystems = data.systems;
+            
+            if (userSession && userSession.system_id) {
+                // Filter systems based on user's system_id array
+                filteredSystems = data.systems.filter(system => 
+                    userSession.system_id.includes(system.id)
+                );
+            }
 
-            // Cache the results
-            Utils.storage.set(CONFIG.STORAGE_KEYS.DEPARTMENTS, {
-                data,
+            // Cache the filtered results
+            Utils.storage.set(CONFIG.STORAGE_KEYS.SYSTEMS, {
+                data: filteredSystems,
                 timestamp: Date.now()
             });
 
-            return { success: true, data };
+            return { success: true, data: filteredSystems };
         } catch (error) {
-            console.error('Failed to fetch departments:', error);
+            console.error('Get systems error:', error);
             return { 
                 success: false, 
-                error: 'Unable to load departments. Please try again later.',
+                error: error.message || 'Failed to load systems.',
                 data: []
+            };
+        }
+    }
+
+    /**
+     * Get users by system ID
+     */
+    static async getUsersBySystem(systemId) {
+        try {
+            const response = await fetch(`${CONFIG.ENDPOINTS.USERS_BY_SYSTEM}/${systemId}`, {
+                method: 'GET',
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get users');
+            }
+
+            const data = await response.json();
+            return { success: true, data: data.users };
+        } catch (error) {
+            console.error('Get users by system error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Failed to load users.',
+                data: []
+            };
+        }
+    }
+
+    /**
+     * Logout user
+     */
+    static async logoutUser() {
+        try {
+            const response = await fetch(CONFIG.ENDPOINTS.LOGOUT, {
+                method: 'POST',
+                headers: this.getAuthHeaders()
+            });
+
+            // Clear local storage regardless of response
+            Utils.storage.remove(CONFIG.STORAGE_KEYS.USER_SESSION);
+            Utils.storage.remove(CONFIG.STORAGE_KEYS.SYSTEMS);
+
+            if (!response.ok) {
+                console.warn('Logout API call failed, but local session cleared');
+                return { success: true, message: 'Logged out successfully' };
+            }
+
+            const data = await response.json();
+            return { success: true, message: data.message || 'Logged out successfully' };
+        } catch (error) {
+            // Even if API call fails, clear local session
+            Utils.storage.remove(CONFIG.STORAGE_KEYS.USER_SESSION);
+            Utils.storage.remove(CONFIG.STORAGE_KEYS.SYSTEMS);
+            
+            console.error('Logout error:', error);
+            return { 
+                success: true, // Still return success since local session is cleared
+                message: 'Logged out successfully'
             };
         }
     }
@@ -244,85 +296,66 @@ class ApiService {
      */
     static async loginUser(credentials) {
         try {
-            await Utils.simulateApiDelay(1000, 2000);
-
-            // For demo purposes, simulate login validation
-            // In real implementation, replace with actual fetch call:
-            /*
-            const response = await fetch(CONFIG.ENDPOINTS.LOGIN, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(credentials)
-            });
-            const data = await response.json();
-            */
-
-            // Mock validation
-            const { username, password, department } = credentials;
+            const { name, password } = credentials;
             
-            if (!username || !password || !department) {
+            if (!name || !password) {
                 throw new Error('All fields are required');
             }
 
-            if (username.length < 3) {
-                throw new Error('Username must be at least 3 characters');
+            if (name.length < 2) {
+                throw new Error('Name must be at least 2 characters');
             }
 
             if (password.length < 6) {
                 throw new Error('Password must be at least 6 characters');
             }
 
-            // Simulate successful login with role-based permissions
-            const rolePermissions = {
-                'admin': {
-                    role: 'Administrator',
-                    permissions: ['read', 'write', 'delete', 'manage_users', 'view_all_departments'],
-                    accessibleDepartments: ['hr', 'finance', 'it', 'security', 'hse', 'customer-service', 'environment']
+            // Real API call
+            const response = await fetch(CONFIG.ENDPOINTS.LOGIN, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                 },
-                'manager': {
-                    role: 'Manager',
-                    permissions: ['read', 'write', 'manage_department'],
-                    accessibleDepartments: [department] // Only their department
-                },
-                'supervisor': {
-                    role: 'Supervisor',
-                    permissions: ['read', 'write', 'view_reports'],
-                    accessibleDepartments: [department, 'hr'] // Their department + HR access
-                },
-                'user': {
-                    role: 'User',
-                    permissions: ['read'],
-                    accessibleDepartments: [department] // Only their department, read-only
+                body: JSON.stringify({
+                    name: name,
+                    password: password
+                })
+            });
+
+            if (!response.ok) {
+                let errorMessage = 'Login failed';
+                
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // If response is not JSON, use status text
+                    errorMessage = response.statusText || errorMessage;
                 }
-            };
+                
+                throw new Error(errorMessage);
+            }
 
-            // Determine user role based on username (for demo purposes)
-            let userRole = 'user'; // default
-            if (username.toLowerCase().includes('admin')) userRole = 'admin';
-            else if (username.toLowerCase().includes('manager')) userRole = 'manager';
-            else if (username.toLowerCase().includes('supervisor')) userRole = 'supervisor';
+            const data = await response.json();
 
-            const userPermissions = rolePermissions[userRole];
-            
+            // Store session data from API response
             const userData = {
-                id: Date.now(),
-                username,
-                department,
-                name: `${username.charAt(0).toUpperCase()}${username.slice(1)} ${userPermissions.role}`,
-                email: `${username}@megaproject.com`,
-                role: userPermissions.role,
-                permissions: userPermissions.permissions,
-                accessibleDepartments: userPermissions.accessibleDepartments,
-                lastLogin: new Date().toISOString()
+                id: data.user.id,
+                name: data.user.name,
+                email: data.user.email,
+                system_id: data.user.system_id,
+                permission_id: data.user.permission_id,
+                access_token: data.access_token,
+                token_type: data.token_type,
+                created_at: data.user.created_at,
+                updated_at: data.user.updated_at
             };
 
             // Store session data
             if (credentials.rememberMe) {
                 Utils.storage.set(CONFIG.STORAGE_KEYS.REMEMBER_ME, {
-                    username,
-                    department
+                    name: name
                 });
             }
 
@@ -331,14 +364,26 @@ class ApiService {
             return { 
                 success: true, 
                 data: userData,
-                message: 'Login successful! Redirecting to dashboard...'
+                message: data.message || 'Login successful! Redirecting to dashboard...'
             };
 
         } catch (error) {
             console.error('Login error:', error);
+            
+            let errorMessage = error.message || 'Login failed. Please check your credentials.';
+            
+            // Handle specific error types
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                errorMessage = 'Connection failed. Please check if the server is running on http://localhost:8080';
+            } else if (error.message.includes('CORS')) {
+                errorMessage = 'CORS error. Please ensure the API server allows cross-origin requests.';
+            } else if (error.message.includes('NetworkError')) {
+                errorMessage = 'Network error. Please check your internet connection.';
+            }
+            
             return { 
                 success: false, 
-                error: error.message || 'Login failed. Please check your credentials.',
+                error: errorMessage,
                 data: null
             };
         }
@@ -350,26 +395,46 @@ class ApiService {
 // ===================================================================
 class Dashboard {
     constructor() {
-        this.departmentsGrid = document.getElementById('departmentsGrid');
+        this.systemsGrid = document.getElementById('departmentsGrid') || document.getElementById('systemsGrid');
         this.loadingSpinner = document.getElementById('loadingSpinner');
         this.errorMessage = document.getElementById('errorMessage');
         this.searchInput = document.getElementById('searchInput');
+        this.currentUsernameSpan = document.getElementById('currentUsername');
+        this.userRoleSpan = document.getElementById('userRole');
+        this.logoutBtn = document.getElementById('logoutButton');
         
-        this.departments = [];
-        this.filteredDepartments = [];
+        this.systems = [];
+        this.filteredSystems = [];
+        this.currentUser = null;
         
         this.init();
     }
 
     async init() {
         try {
+            // Check if user is authenticated
+            if (!this.isAuthenticated()) {
+                this.redirectToLogin();
+                return;
+            }
+
             this.setupEventListeners();
             this.updateCopyright();
-            await this.loadDepartments();
+            await this.loadUserInfo();
+            await this.loadSystems();
         } catch (error) {
             console.error('Dashboard initialization error:', error);
             this.showError('Failed to initialize dashboard');
         }
+    }
+
+    isAuthenticated() {
+        const session = Utils.storage.get(CONFIG.STORAGE_KEYS.USER_SESSION);
+        return session && session.access_token;
+    }
+
+    redirectToLogin() {
+        window.location.href = 'login.html';
     }
 
     setupEventListeners() {
@@ -385,139 +450,189 @@ class Dashboard {
             });
         }
 
+        // Logout functionality
+        if (this.logoutBtn) {
+            this.logoutBtn.addEventListener('click', this.handleLogout.bind(this));
+        }
+
         // Navigation links smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(link => {
             link.addEventListener('click', this.handleSmoothScroll);
         });
     }
 
-    async loadDepartments() {
+    async loadUserInfo() {
+        try {
+            const result = await ApiService.getUserInfo();
+            
+            if (result.success) {
+                this.currentUser = result.data;
+                this.displayUserInfo();
+            } else {
+                console.error('Failed to load user info:', result.error);
+                // If user info fails, might be authentication issue
+                this.redirectToLogin();
+            }
+        } catch (error) {
+            console.error('Error loading user info:', error);
+            this.redirectToLogin();
+        }
+    }
+
+    displayUserInfo() {
+        if (!this.currentUser) return;
+
+        // Update username in navbar dropdown
+        if (this.currentUsernameSpan) {
+            this.currentUsernameSpan.textContent = this.currentUser.name;
+        }
+
+        // Update user role information
+        if (this.userRoleSpan) {
+            const systemCount = this.currentUser.system_id ? this.currentUser.system_id.length : 0;
+            const permissionCount = this.currentUser.permission_id ? this.currentUser.permission_id.length : 0;
+            this.userRoleSpan.textContent = `الأنظمة: ${systemCount} | الصلاحيات: ${permissionCount}`;
+        }
+    }
+
+    async handleLogout() {
+        try {
+            const confirmLogout = confirm('هل تريد تسجيل الخروج من النظام؟');
+            if (!confirmLogout) return;
+
+            // Show loading state
+            if (this.logoutBtn) {
+                this.logoutBtn.disabled = true;
+                this.logoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>جاري تسجيل الخروج...';
+            }
+
+            const result = await ApiService.logoutUser();
+            
+            if (result.success) {
+                // Redirect to login page
+                window.location.href = 'login.html?message=' + encodeURIComponent(result.message);
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            // Even if logout fails, redirect to login
+            window.location.href = 'login.html';
+        }
+    }
+
+    async loadSystems() {
         try {
             this.showLoading(true);
             this.hideError();
 
-            // Get user session for permissions filtering
-            const userSession = sessionStorage.getItem('megaproject_session') || localStorage.getItem('megaproject_session');
-            let userPermissions = null;
-            
-            if (userSession) {
-                try {
-                    const session = JSON.parse(userSession);
-                    userPermissions = session;
-                } catch (error) {
-                    console.error('Error parsing user session:', error);
-                }
-            }
-
-            const result = await ApiService.fetchDepartments();
+            const result = await ApiService.getSystems();
             
             if (result.success) {
-                let departmentsToShow = result.data;
+                this.systems = result.data;
+                this.filteredSystems = [...this.systems];
+                this.renderSystems();
                 
-                // Filter departments based on user permissions
-                if (userPermissions && userPermissions.accessibleDepartments) {
-                    departmentsToShow = result.data.filter(dept => 
-                        userPermissions.accessibleDepartments.includes(dept.id)
-                    );
-                    
-                    // Add visual indicator for permission-based filtering
-                    if (departmentsToShow.length < result.data.length) {
-                        const permissionInfo = document.getElementById('permissionInfo');
-                        const permissionText = document.getElementById('permissionText');
-                        if (permissionInfo && permissionText) {
-                            permissionText.textContent = 
-                                `Showing ${departmentsToShow.length} of ${result.data.length} departments based on your ${userPermissions.role} role permissions.`;
-                            permissionInfo.classList.remove('d-none');
-                        }
+                // Show message if no systems accessible
+                if (result.data.length === 0) {
+                    this.showError('لا توجد أنظمة متاحة مع صلاحياتك الحالية. يرجى الاتصال بالمشرف.');
+                } else {
+                    // Add visual indicator for accessible systems
+                    const permissionInfo = document.getElementById('permissionInfo');
+                    const permissionText = document.getElementById('permissionText');
+                    if (permissionInfo && permissionText) {
+                        const userName = this.currentUser ? this.currentUser.name : 'المستخدم';
+                        permissionText.textContent = 
+                            `مرحباً ${userName}، يتم عرض ${result.data.length} نظام متاح لك بناءً على صلاحياتك.`;
+                        permissionInfo.classList.remove('d-none');
                     }
-                }
-                
-                this.departments = departmentsToShow;
-                this.filteredDepartments = [...this.departments];
-                this.renderDepartments();
-                
-                // Show message if no departments accessible
-                if (departmentsToShow.length === 0) {
-                    this.showError('No departments available with your current permissions. Please contact your administrator.');
                 }
             } else {
                 this.showError(result.error);
             }
         } catch (error) {
-            console.error('Error loading departments:', error);
-            this.showError('Failed to load departments');
+            console.error('Error loading systems:', error);
+            this.showError('فشل في تحميل الأنظمة');
         } finally {
             this.showLoading(false);
         }
     }
 
-    renderDepartments() {
-        if (!this.departmentsGrid) return;
+    renderSystems() {
+        if (!this.systemsGrid) return;
 
-        if (this.filteredDepartments.length === 0) {
-            this.departmentsGrid.innerHTML = `
+        if (this.filteredSystems.length === 0) {
+            this.systemsGrid.innerHTML = `
                 <div class="col-12 text-center py-5">
                     <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
-                    <h3 class="mt-3 text-muted">No departments found</h3>
-                    <p class="text-muted">Try adjusting your search criteria</p>
+                    <h3 class="mt-3 text-muted">لم يتم العثور على أنظمة</h3>
+                    <p class="text-muted">جرب تعديل معايير البحث</p>
                 </div>
             `;
             return;
         }
 
-        const cardsHtml = this.filteredDepartments.map((dept, index) => 
-            this.createDepartmentCard(dept, index)
+        const cardsHtml = this.filteredSystems.map((system, index) => 
+            this.createSystemCard(system, index)
         ).join('');
 
-        this.departmentsGrid.innerHTML = cardsHtml;
+        this.systemsGrid.innerHTML = cardsHtml;
 
         // Add click event listeners to cards
         this.setupCardClickListeners();
     }
 
-    createDepartmentCard(department, index) {
-        const { id, name, description, icon, employees, active } = department;
+    createSystemCard(system, index) {
+        const { id, system_name, description, is_active } = system;
+        
+        // Choose appropriate icon based on system name
+        const getSystemIcon = (systemName) => {
+            const name = systemName.toLowerCase();
+            if (name.includes('مستخدمين') || name.includes('users')) return 'fas fa-users';
+            if (name.includes('محاسبة') || name.includes('accounting')) return 'fas fa-calculator';
+            if (name.includes('مخزون') || name.includes('inventory')) return 'fas fa-boxes';
+            if (name.includes('مبيعات') || name.includes('sales')) return 'fas fa-chart-line';
+            if (name.includes('موارد') || name.includes('hr')) return 'fas fa-user-tie';
+            return 'fas fa-cog'; // default icon
+        };
         
         return `
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <a href="login.html?dept=${id}" 
-                   class="department-card card h-100" 
-                   data-dept="${id}"
-                   style="animation-delay: ${index * 0.1}s"
-                   role="button"
-                   aria-label="Access ${name} department">
+                <div class="system-card card h-100" 
+                     data-system-id="${id}"
+                     style="animation-delay: ${index * 0.1}s; cursor: pointer;"
+                     role="button"
+                     aria-label="الوصول إلى نظام ${system_name}">
                     
-                    ${active ? '' : '<div class="card-badge">Maintenance</div>'}
+                    ${!is_active ? '<div class="card-badge">صيانة</div>' : ''}
                     
                     <div class="department-icon">
-                        <i class="${icon}" aria-hidden="true"></i>
+                        <i class="${getSystemIcon(system_name)}" aria-hidden="true"></i>
                     </div>
                     
-                    <h3>${name}</h3>
+                    <h3>${system_name}</h3>
                     <p>${description}</p>
                     
                     <div class="mt-auto">
                         <small class="text-muted">
-                            <i class="fas fa-users me-1"></i>
-                            ${employees} employees
+                            <i class="fas fa-shield-alt me-1"></i>
+                            ${is_active ? 'نشط' : 'غير نشط'}
                         </small>
                     </div>
-                </a>
+                </div>
             </div>
         `;
     }
 
     setupCardClickListeners() {
-        document.querySelectorAll('.department-card').forEach(card => {
+        document.querySelectorAll('.system-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 e.preventDefault();
-                const dept = card.dataset.dept;
+                const systemId = card.dataset.systemId;
                 
                 // Add click animation
                 card.style.transform = 'scale(0.95)';
                 setTimeout(() => {
                     card.style.transform = '';
-                    window.location.href = `login.html?dept=${dept}`;
+                    this.openSystem(systemId);
                 }, 150);
             });
 
@@ -531,20 +646,39 @@ class Dashboard {
         });
     }
 
+    async openSystem(systemId) {
+        try {
+            // For now, show system info modal or redirect to system page
+            // This can be customized based on your system structure
+            
+            const system = this.systems.find(s => s.id == systemId);
+            if (system) {
+                // Show system details modal or redirect to system URL
+                alert(`سيتم فتح نظام: ${system.system_name}\n\nالوصف: ${system.description}\n\nهذه الميزة قيد التطوير.`);
+                
+                // Example: redirect to system URL
+                // window.location.href = `system.html?id=${systemId}`;
+            }
+        } catch (error) {
+            console.error('Error opening system:', error);
+            alert('حدث خطأ في فتح النظام. يرجى المحاولة مرة أخرى.');
+        }
+    }
+
     handleSearch() {
         const query = this.searchInput.value.toLowerCase().trim();
         
         if (query === '') {
-            this.filteredDepartments = [...this.departments];
+            this.filteredSystems = [...this.systems];
         } else {
-            this.filteredDepartments = this.departments.filter(dept =>
-                dept.name.toLowerCase().includes(query) ||
-                dept.description.toLowerCase().includes(query) ||
-                dept.id.toLowerCase().includes(query)
+            this.filteredSystems = this.systems.filter(system =>
+                system.system_name.toLowerCase().includes(query) ||
+                system.description.toLowerCase().includes(query) ||
+                system.id.toString().includes(query)
             );
         }
         
-        this.renderDepartments();
+        this.renderSystems();
     }
 
     handleSmoothScroll(e) {
@@ -597,8 +731,7 @@ class Dashboard {
 class LoginManager {
     constructor() {
         this.form = document.getElementById('loginForm');
-        this.departmentSelect = document.getElementById('departmentSelect');
-        this.usernameInput = document.getElementById('username');
+        this.nameInput = document.getElementById('name');
         this.passwordInput = document.getElementById('password');
         this.rememberMeCheckbox = document.getElementById('rememberMe');
         this.loginButton = document.getElementById('loginButton');
@@ -617,12 +750,22 @@ class LoginManager {
         try {
             this.setupEventListeners();
             this.updateCopyright();
-            await this.loadDepartments();
-            this.handleUrlParams();
             this.loadRememberedCredentials();
+            this.handleUrlMessages();
         } catch (error) {
             console.error('Login initialization error:', error);
             this.showAlert('Failed to initialize login form', 'danger');
+        }
+    }
+
+    handleUrlMessages() {
+        const urlParams = Utils.getUrlParams();
+        const message = urlParams.get('message');
+        
+        if (message) {
+            setTimeout(() => {
+                this.showAlert(decodeURIComponent(message), 'success');
+            }, 500);
         }
     }
 
@@ -633,7 +776,7 @@ class LoginManager {
         }
 
         // Real-time validation
-        [this.usernameInput, this.passwordInput, this.departmentSelect].filter(input => input).forEach(input => {
+        [this.nameInput, this.passwordInput].filter(input => input).forEach(input => {
             input.addEventListener('blur', () => this.validateField(input));
             input.addEventListener('input', () => this.clearFieldError(input));
         });
@@ -650,51 +793,13 @@ class LoginManager {
         }
     }
 
-    async loadDepartments() {
-        try {
-            const result = await ApiService.fetchDepartments();
-            
-            if (result.success && this.departmentSelect) {
-                this.populateDepartmentOptions(result.data);
-            }
-        } catch (error) {
-            console.error('Error loading departments for login:', error);
-        }
-    }
 
-    populateDepartmentOptions(departments) {
-        if (!this.departmentSelect) return;
-        
-        // Clear existing options except the first one
-        while (this.departmentSelect.children.length > 1) {
-            this.departmentSelect.removeChild(this.departmentSelect.lastChild);
-        }
-
-        departments.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept.id;
-            option.textContent = dept.name;
-            this.departmentSelect.appendChild(option);
-        });
-    }
-
-    handleUrlParams() {
-        const urlParams = Utils.getUrlParams();
-        const deptParam = urlParams.get('dept');
-        
-        if (deptParam && this.departmentSelect) {
-            this.departmentSelect.value = deptParam;
-            // Trigger validation to remove any error state
-            this.validateField(this.departmentSelect);
-        }
-    }
 
     loadRememberedCredentials() {
         const remembered = Utils.storage.get(CONFIG.STORAGE_KEYS.REMEMBER_ME);
         
         if (remembered) {
-            if (this.usernameInput) this.usernameInput.value = remembered.username || '';
-            if (this.departmentSelect && remembered.department) this.departmentSelect.value = remembered.department;
+            if (this.nameInput) this.nameInput.value = remembered.name || '';
             if (this.rememberMeCheckbox) this.rememberMeCheckbox.checked = true;
         }
     }
@@ -718,9 +823,8 @@ class LoginManager {
 
         try {
             const credentials = {
-                username: this.usernameInput.value.trim(),
+                name: this.nameInput.value.trim(),
                 password: this.passwordInput.value,
-                department: this.departmentSelect ? this.departmentSelect.value : 'general',
                 rememberMe: this.rememberMeCheckbox.checked
             };
 
@@ -731,9 +835,7 @@ class LoginManager {
                 
                 // Redirect after short delay
                 setTimeout(() => {
-                    // Redirect to personalized dashboard based on authentication
-                    const deptParam = credentials.department !== 'general' ? `&dept=${credentials.department}` : '';
-                    window.location.href = `dashboard.html?success=1${deptParam}`;
+                    window.location.href = `dashboard.html?success=1`;
                 }, 1500);
             } else {
                 this.showAlert(result.error, 'danger');
@@ -750,17 +852,12 @@ class LoginManager {
     validateForm() {
         let isValid = true;
         
-        // Validate required fields (username and password are required, department is optional)
-        [this.usernameInput, this.passwordInput].forEach(field => {
+        // Validate required fields (name and password are required)
+        [this.nameInput, this.passwordInput].forEach(field => {
             if (field && !this.validateField(field)) {
                 isValid = false;
             }
         });
-        
-        // Validate department selection only if it exists (it's optional now)
-        if (this.departmentSelect && !this.validateField(this.departmentSelect)) {
-            isValid = false;
-        }
 
         return isValid;
     }
@@ -775,10 +872,10 @@ class LoginManager {
         switch (field.type || field.tagName.toLowerCase()) {
             case 'text':
                 if (!value) {
-                    errorMessage = 'Username is required';
+                    errorMessage = 'Name is required';
                     isValid = false;
-                } else if (value.length < 3) {
-                    errorMessage = 'Username must be at least 3 characters';
+                } else if (value.length < 2) {
+                    errorMessage = 'Name must be at least 2 characters';
                     isValid = false;
                 }
                 break;
@@ -789,13 +886,6 @@ class LoginManager {
                     isValid = false;
                 } else if (value.length < 6) {
                     errorMessage = 'Password must be at least 6 characters';
-                    isValid = false;
-                }
-                break;
-
-            case 'select-one':
-                if (!value) {
-                    errorMessage = 'Please select a department';
                     isValid = false;
                 }
                 break;
@@ -953,9 +1043,8 @@ class App {
     handleSuccessMessages() {
         const urlParams = Utils.getUrlParams();
         const success = urlParams.get('success');
-        const dept = urlParams.get('dept');
         
-        if (success === '1' && dept) {
+        if (success === '1') {
             // Show success message for successful login
             setTimeout(() => {
                 const alertContainer = document.createElement('div');
@@ -963,7 +1052,7 @@ class App {
                 alertContainer.style.cssText = 'top: 100px; right: 20px; z-index: 9999; max-width: 400px;';
                 alertContainer.innerHTML = `
                     <i class="fas fa-check-circle me-2"></i>
-                    Welcome! You've successfully logged in to ${dept.toUpperCase()}.
+                    Welcome! You've successfully logged in to the system.
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
                 document.body.appendChild(alertContainer);
