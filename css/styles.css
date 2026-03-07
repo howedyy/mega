@@ -640,3 +640,102 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-dark);
 }
+
+/* ===================================================================
+   SYSTEM CARDS STYLES (Similar to department cards but for systems)
+   ================================================================== */
+.system-card {
+    background: white;
+    border: none;
+    border-radius: var(--border-radius-xl);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    box-shadow: var(--shadow-md);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+}
+
+.system-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: var(--transition-slow);
+}
+
+.system-card:hover::before {
+    left: 100%;
+}
+
+.system-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+    text-decoration: none;
+    color: inherit;
+}
+
+.system-card:hover .department-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.system-card h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--dark-color);
+}
+
+.system-card p {
+    color: var(--secondary-color);
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+.system-card .card-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--gradient-secondary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* System card animations */
+@media (prefers-reduced-motion: no-preference) {
+    .system-card {
+        animation: fadeInUp 0.8s ease-out forwards;
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    
+    .system-card:nth-child(1) { animation-delay: 0.1s; }
+    .system-card:nth-child(2) { animation-delay: 0.2s; }
+    .system-card:nth-child(3) { animation-delay: 0.3s; }
+    .system-card:nth-child(4) { animation-delay: 0.4s; }
+    .system-card:nth-child(5) { animation-delay: 0.5s; }
+    .system-card:nth-child(6) { animation-delay: 0.6s; }
+    .system-card:nth-child(7) { animation-delay: 0.7s; }
+    .system-card:nth-child(8) { animation-delay: 0.8s; }
+}
+
+/* Responsive adjustments for system cards */
+@media (max-width: 768px) {
+    .system-card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .system-card h3 {
+        font-size: 1.25rem;
+    }
+}
